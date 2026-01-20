@@ -1,0 +1,32 @@
+
+function runScrapeSimple() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName('検索');
+  const query = sheet.getRange('B1').getValue();
+  if (!query) return;
+
+  const url = "https://www.google.com/search?hl=ja&num=10&q=" + encodeURIComponent(query);
+
+  // Google検索ページを取得
+  const html = UrlFetchApp.fetch(url, {
+    headers: { 
+      "User-Agent": "Mozilla/5.0" 
+    }
+  }).getContentText();
+
+  // /url?q= 形式からURLを抜き出す（簡易正規表現）
+  const regex = /\/url\?q=(https?:\/\/[^&]+)&/g;
+  const results = [];
+  let match;
+
+  while ((match = regex.exec(html)) !== null && results.length < 5) {
+    results.push(decodeURIComponent(match[1]));
+  }
+
+  // 出力をクリア
+  sheet.getRange("A3:A7").clearContent();
+
+  // URLのみ書き込み
+  results.forEach((url, i) => {
+    sheet.getRange(3 + i, 1).setValue(url);
+  });
+}
